@@ -1,1 +1,0 @@
-echo "$(ls)@$(sh mem_script)@$(sh .networktraffic)@$(sh ./scripts/hd_script)"
