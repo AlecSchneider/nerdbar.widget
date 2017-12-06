@@ -1,76 +1,70 @@
 command: "sh nerdbar.widget/scripts/screens.sh" 
-   
+     
 
 refreshFrequency: 1000 # ms
 
 render: (output) ->
-  """
-    <link rel="stylesheet" type="text/css" href="./colors.css" />
-    <div class='kwmmode'></div>
-  """
+    """
+        <link rel="stylesheet" type="text/css" href="./colors.css" />
+        <div class='kwmmode'></div>
+    """
 
 style: """
-  -webkit-font-smoothing: antialiased
-  left: 10px
-  top: 8px
-  width:850px
-  cursor: pointer;
+    -webkit-font-smoothing: antialiased
+    left: 10px
+    top: 8px
+    width:850px
+    cursor: pointer;
+    .list {
+        display: inline
+        text-align: center
+        padding-top: 6px
+        padding-bottom: 5.2px
+    }
+
+    .inactive {
+        border: 1px #a89984
+    }
+
+    .active {
+        background: #18CAE6
+        color: #282a36
+    }
 """
 
 update: (output, domEl) ->
+    [mode, spaces, focused...] = output.split '@'
+    spaces = @visual spaces
+    focused = @maxLength focused.join(""), 30
 
-  values = output.split('@')
+    #display the html string
+    $(domEl).find('.kwmmode').html("<span class='tilingMode icon'> </span>" +
+        "<span class='tilingMode white'>#{mode} " +
+        "<span> |</span>" +
+        spaces + 
+        "<span>| </span><span class='icon'></span> " +
+        "<span class='white'>#{focused}</span>")
 
-  file = ""
-  screenhtml = ""
-  mode = values[0]
-  screens = values[1]
-  win= values[2]
-  i = 0
+maxLength: (str, limit) ->
+    if str.length > limit
+        return str.substr(0, limit) + "…"
+    return str
 
-  # The script ouputs the space names in parens so you can split them here. The
-  # script outputs the names of the screens, if you prefer to use those instead
-  # of generic indicators.
-  console.log(output)
-  screensegs = screens.split('(')
+visual: (spaces) ->
+    spaces = spaces.split('(')
+    spaces = (x.replace /^\s+|\s+$/g, "" for x in spaces when x != '')
+    return (@numbers space for space in spaces).join('')
 
-  for sseg in screensegs
-    screensegs[i] = sseg.replace /^\s+|\s+$/g, ""
-    i+=1
-
-  screensegs = (x for x in screensegs when x != '')
-
-  i = 0
-
-  #apply a proper number tag so that space change controls can be added
-  for sseg in screensegs
-    i += 1
+dots: (space) ->
     # the active space has a closing paren aroound the name
-    if sseg.slice(-1) == ")"
-      screenhtml += "<span class='icon screen#{i}'>&nbsp&nbsp</span>"
+    if space.slice(-1) == ")"
+        return "<span class='icon screen'>&nbsp&nbsp</span>"
     else
-      screenhtml += "<span class='icon white screen#{i}'>&nbsp&nbsp</span>"
-  
-  if win.length > 30
-      win = win.substr(0, 30) + "…"
-  #display the html string
-  $(domEl).find('.kwmmode').html("<span class='tilingMode icon'> </span>" +
-                                 "<span class='tilingMode white'>#{mode} " +
-                                 "<span> ⎢ </span></span>" +
-                                 screenhtml + 
-                                 "<span> ⎢ </span><span class='icon'></span> " +
-                                 "<span class='white'>#{win}</span>")
+        return "<span class='icon white screen'>&nbsp&nbsp</span>"
 
-  # add screen changing controls to the screen icons
-  $(".screen1").on 'click', => @run "osascript -e 'tell application \"System Events\" to key code 18 using control down'"
-  $(".screen2").on 'click', => @run "osascript -e 'tell application \"System Events\" to key code 19 using control down'"
-  $(".screen3").on 'click', => @run "osascript -e 'tell application \"System Events\" to key code 20 using control down'"
-  $(".screen4").on 'click', => @run "osascript -e 'tell application \"System Events\" to key code 21 using control down'"
-
-  # cycle through KWM space modes by clicking on the mode icon or mode name
-  if /bsp/.test(mode) == true
-    $(".tilingMode").on 'click', => @run "/usr/local/bin/kwmc space -t float"
-  else if /float/.test(mode) == true
-    $(".tilingMode").on 'click', => @run "/usr/local/bin/kwmc space -t monocle"
-  else
-    $(".tilingMode").on 'click', => @run "/usr/local/bin/kwmc space -t bsp"
+numbers: (space) ->
+    # the active space has a closing paren aroound the name
+    if space.slice(-1) == ")"
+        return "<span class='list active'>&nbsp#{space.slice(-2, -1)}&nbsp</span>"
+    else
+        return "<span class='list inactive'>&nbsp#{space.slice(-1)}&nbsp</span>"
